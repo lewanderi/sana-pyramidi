@@ -268,7 +268,12 @@ header h2 {
     height: 80px;
     justify-self: center;
     transition: all 0.4s ease;
+
+    min-width: 0;
+
     text-transform: uppercase;
+    font-size: clamp(0.7rem, 2vw, 1rem);
+    word-break: break-word;
 }
 
 .tile.selected {

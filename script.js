@@ -10,6 +10,8 @@ const puzzle = {
     lone_word_color: "#a8dadc"
 }
 
+const defaultPuzzle = JSON.parse(JSON.stringify(puzzle));
+
 // global variables
 let shuffledWords = [];
 const COLS = 60;
@@ -524,6 +526,11 @@ function showOverlay(title, message) {
 }
 
 function resetGame() {
+    // restore default
+    puzzle.categories = JSON.parse(JSON.stringify(defaultPuzzle.categories));
+    puzzle.lone_word = defaultPuzzle.lone_word;
+    puzzle.lone_word_color = defaultPuzzle.lone_word_color;
+
     shuffledWords = [];
     wrongGuesses = 0;
     nextHintSize = 5;

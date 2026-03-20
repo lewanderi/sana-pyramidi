@@ -3,35 +3,100 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Custom word pyramid</title>
+    <title>Word Summit</title>
     <link rel="stylesheet" href="style.css">
   </head>
   <body>
-    <header>
-        <h1>Sana-pyramidi</h1>
+    <header id="main-header">
+        <button id="back-btn" style="visibility:hidden;">← Back</button>
+        <h1>Word Summit</h1>
     </header>
-    <h2 id="instruction">Select words that belong together</h2>
-    <div id="pyramid">
-    </div>
-    <div id="overlay" style="display:none;">
-      <h2 id="overlay-title"></h2>
-      <p id="overlay-message"></p>
-      <button id="overlay-btn">Play Again</button>
-    </div>
-    <button id="submit-btn">Submit</button>
 
-    <div id="mistakes">
-        <h3>mistakes remaining</h3>
-        <span id="dot1"></span>
-        <span id="dot2"></span>
-        <span id="dot3"></span>
-        <span id="dot4"></span>
+    <div id="choice-screen">
+      <p>Choose game mode</p>
+      <div class="choice-buttons">
+          <button id="example-btn">Example Puzzle</button>
+          <button id="custom-btn">Create Your Own</button>
+      </div>
     </div>
 
-    <div class="buttons">
-        <button id="check-btn">Check</button>
-        <button id="clear-btn">Clear</button>
-        <button id="hint-btn">Hint</button>
+   <div id="setup-screen" style="display:none;">
+    <h2>Create Your Puzzle</h2>
+    <p class="setup-subtitle">Fill in each category label and related words</p>
+
+    <div class="setup-categories">
+        <div class="setup-category">
+            <div class="chip-row" data-size="5">
+                <input type="text" class="category-label" placeholder="e.g. Things that fly">
+                <input type="text" class="chip-input" placeholder="eagle">
+                <input type="text" class="chip-input" placeholder="kite">
+                <input type="text" class="chip-input" placeholder="balloon">
+                <input type="text" class="chip-input" placeholder="frisbee">
+                <input type="text" class="chip-input" placeholder="butterfly">
+            </div>
+        </div>
+        <div class="setup-category">
+            <input type="text" class="category-label" placeholder="Category name...">
+            <div class="chip-row" data-size="4">
+                <input type="text" class="chip-input" placeholder="word">
+                <input type="text" class="chip-input" placeholder="word">
+                <input type="text" class="chip-input" placeholder="word">
+                <input type="text" class="chip-input" placeholder="word">
+            </div>
+        </div>
+        <div class="setup-category">
+            <input type="text" class="category-label" placeholder="Category name...">
+            <div class="chip-row" data-size="3">
+                <input type="text" class="chip-input" placeholder="word">
+                <input type="text" class="chip-input" placeholder="word">
+                <input type="text" class="chip-input" placeholder="word">
+            </div>
+        </div>
+        <div class="setup-category">
+            <input type="text" class="category-label" placeholder="Category name...">
+            <div class="chip-row" data-size="2">
+                <input type="text" class="chip-input" placeholder="word">
+                <input type="text" class="chip-input" placeholder="word">
+            </div>
+        </div>
+
+    <div class="setup-lone">
+        <p class="lone-label">The odd one out</p>
+        <input type="text" id="lone-word-input" placeholder="lone word">
+    </div>
+
+    <p id="validation-msg" style="color:red; display:none;"></p>
+    <button id="generate-btn">Generate Puzzle</button>
+</div>
+</div>
+
+    <div id="game" style="display:none;">
+        <div id="share-section" style="display:none;">
+            <button id="copy-btn">Share Puzzle 🔗</button>
+        </div>
+        <h2 id="instruction">Select words that belong together</h2>
+        <div id="pyramid">
+        </div>
+      <div id="overlay" style="display:none;">
+        <h2 id="overlay-title"></h2>
+        <p id="overlay-message"></p>
+        <button id="overlay-btn">Play Again</button>
+      </div>
+      <div id="mistakes">
+        <div id="dots">
+          <span class="dot" id="dot1">❤️</span>
+          <span class="dot" id="dot2">❤️</span>
+          <span class="dot" id="dot3">❤️</span>
+          <span class="dot" id="dot4">❤️</span>
+        </div>
+      </div>
+
+    <p id="check-msg"></p>
+      <div class="buttons">
+          <button id="check-btn">Check</button>
+          <button id="clear-btn">Clear</button>
+          <button id="hint-btn">Hint</button>
+      </div>
     </div>
     <script src="script.js"></script>
   </body>

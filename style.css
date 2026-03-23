@@ -259,8 +259,8 @@ header h2 {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: grey;
-    padding: 0.75rem 0.75rem;
+    background: rgb(84, 84, 84);
+    padding: 0.4rem 0.4rem;
     box-sizing: border-box;
     margin: 0 5px;
     border-radius: 12px;
@@ -272,13 +272,10 @@ header h2 {
     min-width: 0;
 
     text-transform: uppercase;
-    font-size: clamp(0.7rem, 2vw, 1rem);
+    text-align: center;
+    font-size: clamp(0.75rem, 2.5vw, 1.25rem);
+    hyphens: auto;
     word-break: break-word;
-}
-
-.tile.selected {
-    background: #555;
-    border: 6px solid white;
 }
 
 /* color for selection */
@@ -309,7 +306,7 @@ header h2 {
     100% { transform: translateX(0); }
 }
 
-.tile.shake, #submit-btn.shake {
+.tile.shake, #check-btn.shake {
     animation: shake 0.3s ease;
 }
 
@@ -329,7 +326,7 @@ header h2 {
     display: flex;
     justify-content: center;
     gap: 0.75rem;
-    margin-top: 1rem;
+    margin-top: 0rem;
 }
 
 button {
@@ -366,8 +363,7 @@ button {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
-    margin-top: 1rem;
+    margin: 1rem;
 }
 
 /* merged */
@@ -376,6 +372,7 @@ button {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    text-align: center;
     height: 80px;
     border-radius: 12px;
     gap: 0.25rem;
@@ -384,14 +381,13 @@ button {
 
 .merged-label {
     font-weight: 700;
-    font-size: 1.25rem;
+    font-size: 1rem;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
     color: rgba(0,0,0,0.7);
 }
 
 .merged-words {
-    font-size: 1rem;
+    font-size: 0.75rem;
     color: rgba(0,0,0,0.5);
     text-transform: uppercase;
 }
@@ -440,11 +436,49 @@ button {
     font-size: 2rem;
 }
 
-#overlay-btn {
-    padding: 0.75rem 2rem;
-    border-radius: 12px;
-    border: none;
-    cursor: pointer;
+#overlay-create-btn {
     background: white;
-    font-size: 1rem;
+    color: #1a1a1a;
+    border: none;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+#overlay-create-btn:hover {
+    background: rgba(255,255,255,0.85);
+}
+
+#overlay-home-btn {
+    background: transparent;
+    color: white;
+    border: 1.5px solid rgba(255,255,255,0.4);
+}
+
+#overlay-home-btn:hover {
+    border-color: white;
+}
+
+#overlay-btn {
+    background: transparent;
+    color: rgba(255,255,255,0.5);
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+#overlay-btn:hover {
+    color: white;
+    border-color: rgba(255,255,255,0.5);
+}
+
+#overlay-view-btn {
+    background: transparent;
+    color: rgba(255,255,255,0.4);
+    border: none;
+    font-size: 0.85rem;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+}
+
+#overlay-view-btn:hover {
+    color: white;
 }

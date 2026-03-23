@@ -1,0 +1,4 @@
+features to add:
+-kieli
+-if hint selected then take hint doesn't take the hint?
+-smoother animation

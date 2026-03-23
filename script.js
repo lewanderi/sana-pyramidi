@@ -1,12 +1,12 @@
 // puzzle
 const puzzle = {
     categories: [
-        {label: "eläimiä", words: ["koira",  "kissa", "hiiri", "kilpikonna", "lisko"], color: "#2a9d8f" },
-        {label: "juomia", words: ["sooda",  "kahvi", "tee", "vesi"], color: "#f4a261" },
-        {label: "erilaisia aaltoja", words: ["slabi",  "a-frame", "barreli"], color: "#e63946" },
-        {label: "kasveja", words: ["cactus",  "palmu"], color: "#457b9d" },
+        {label: "suu", words: ["nuolee",  "pussaa", "kuolaa", "viheltää", "röyhtäisee"], color: "#2a9d8f" },
+        {label: "silmät", words: ["kostuu",  "itkee", "siristää", "näkee"], color: "#f4a261" },
+        {label: "nenä", words: ["haistaa",  "nyrpistää", "tuhahtaa"], color: "#e63946" },
+        {label: "korvat", words: ["kuulee",  "punastuu"], color: "#457b9d" },
     ],
-    lone_word: "alieni",
+    lone_word: "aistii",
     lone_word_color: "#a8dadc"
 }
 
@@ -18,6 +18,7 @@ const COLS = 60;
 let wrongGuesses = 0;
 const MAX_GUESSES = 4;
 let nextHintSize = 5;
+let previousGuesses = [];
 
 // check if custom URL
 function loadFromUrl() {
@@ -53,12 +54,39 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log("game display:", document.getElementById("game").style.display); // ADD
         renderPyramid();
         console.log("tiles in pyramid:", document.querySelectorAll(".tile").length);
+
+        showBack(() => {
+            document.getElementById("game").style.display = "none";
+            document.getElementById("choice-screen").style.display = "flex";
+            resetGame();
+            hideBack();
+        });
     }
 
 
-    // event listeners
+// event listeners
     document.getElementById("overlay-btn").addEventListener("click", () => {
-    location.reload();
+        location.reload();
+    });
+
+    document.getElementById("overlay-home-btn").addEventListener("click", () => {
+        document.getElementById("overlay").style.display = "none";
+        document.getElementById("game").style.display = "none";
+        document.getElementById("choice-screen").style.display = "flex";
+        resetGame();
+        hideBack();
+    });
+
+    document.getElementById("overlay-create-btn").addEventListener("click", () => {
+        document.getElementById("overlay").style.display = "none";
+        document.getElementById("game").style.display = "none";
+        document.getElementById("setup-screen").style.display = "block";
+        resetGame();
+        showBack(() => {
+            document.getElementById("setup-screen").style.display = "none";
+            document.getElementById("choice-screen").style.display = "flex";
+            hideBack();
+        });
 });
 
 document.getElementById("clear-btn").addEventListener("click", () => {
@@ -112,6 +140,7 @@ document.getElementById("hint-btn").addEventListener("click", () => {
     hintTile.classList.add("hinted");
     hintTile.style.gridColumn = slot1Column;
     hintTile.style.gridRow = slot1Row;
+    hintTile.dataset.hintColor = category.color;
     hintTile.style.background = category.color; 
         
 
@@ -172,13 +201,25 @@ submitBtn.addEventListener("click", () => {
         submitBtn.classList.remove("shake");
         }, { once: true });
 
-        const msg = document.getElementById("check-msg");
-        msg.textContent = "Select at least one word";
-        msg.style.opacity = "1";
-        setTimeout(() => msg.style.opacity = "0", 1500);
+        setInstruction("Select at least one word");
 
         return;
     } 
+
+    const guessKey = [...selectedWords].sort().join(",");
+
+    if (previousGuesses.includes(guessKey)) {
+        setInstruction("You already tried this! 🤔");
+        selected.forEach(tile => {
+                tile.classList.add("shake");
+                tile.addEventListener("animationend", () => {
+                    tile.classList.remove("shake");
+                }, { once: true });
+            });
+        return;
+    }
+
+    previousGuesses.push(guessKey);
 
     const match = puzzle.categories.find(category => 
         category.words.every(word => selectedWords.includes(word)) &&
@@ -186,6 +227,8 @@ submitBtn.addEventListener("click", () => {
     );
 
     if (match) {
+        setInstruction(`Nice one!👍🏻`, 2000);
+
         selected.forEach(tile => {
             tile.remove();
         });
@@ -218,6 +261,7 @@ submitBtn.addEventListener("click", () => {
         const isLoneWord = selectedWords.length === 1 && selectedWords[0] === puzzle.lone_word;
 
         if (isLoneWord) {
+            setInstruction(`Nice one!👍🏻`, 2000);
             const tile = selected[0];
             tile.remove();
             const tileSpan = 12;
@@ -236,6 +280,31 @@ submitBtn.addEventListener("click", () => {
             repositionRemaining();
             checkWin();
         } else {
+            // check if one away from any category
+            const oneAway = puzzle.categories.find(category => {
+                const matches = selectedWords.filter(w => category.words.includes(w)).length;
+                const extras = selectedWords.filter(w => !category.words.includes(w)).length;
+                console.log(category.label, "matches:", matches, "extras:", extras, "needed:", category.words.length - 1);
+                return matches === category.words.length - 1 && extras === 1;
+            });
+            console.log("oneAway:", oneAway);
+
+            // check if all selected words belong to the same category but not enough
+            // might be too easy, only add 1 more?
+            const onTrack = puzzle.categories.find(category => {
+                const matches = selectedWords.filter(w => category.words.includes(w)).length;
+                const extras = selectedWords.filter(w => !category.words.includes(w)).length;
+                return matches === selectedWords.length && extras === 0 && matches < category.words.length;
+            });
+
+            if (onTrack) {
+                setInstruction(`Need ${onTrack.words.length - selectedWords.length} more!`);
+            } else if (oneAway) {
+                setInstruction("One away...");
+            } else {
+                setInstruction("Nope🙂‍↔️");
+            }
+
             selected.forEach(tile => {
                 tile.classList.add("shake");
                 tile.addEventListener("animationend", () => {
@@ -336,7 +405,7 @@ document.getElementById("generate-btn").addEventListener("click", () => {
         document.getElementById("copy-btn").textContent = "Copied!✅";
         setTimeout(() => {
             document.getElementById("copy-btn").textContent = "Share Puzzle 🔗";
-        }, 2000);
+        }, 3000);
     });
 });
 
@@ -355,6 +424,10 @@ function showBack(fn) {
 function hideBack() {
     document.getElementById("back-btn").style.visibility = "hidden";
 }
+
+document.getElementById("overlay-view-btn").addEventListener("click", () => {
+    document.getElementById("overlay").style.display = "none";
+});
 
 }); // end of DOMContentLoaded
 
@@ -410,11 +483,18 @@ function updateSelectionColors() {
     const count = selected.length;
 
     document.querySelectorAll(".tile").forEach(tile => {
-    [1,2,3,4,5].forEach(n => tile.classList.remove(`selected-${n}`));
+        [1,2,3,4,5].forEach(n => tile.classList.remove(`selected-${n}`));
+
+        if (tile.classList.contains("hinted") && !tile.classList.contains("selected")) {
+        tile.style.background = tile.dataset.hintColor;
+        }
     });
 
     selected.forEach(tile => {
     tile.classList.add(`selected-${count}`);
+    if (tile.classList.contains("hinted")) {
+        tile.style.background = "";
+    }
     });
 }
 
@@ -471,6 +551,16 @@ function repositionRemaining() {
     })
 }
 
+// changing instructions
+function setInstruction(text, duration = 2000) {
+    const el = document.getElementById("instruction");
+    el.textContent = text;
+    clearTimeout(window.instructionTimeout);
+    window.instructionTimeout = setTimeout(() => {
+        el.textContent = "Select words that belong together";
+    }, duration);
+}
+
 function checkWin() {
     const remaining = document.querySelectorAll(".tile:not(.locked):not(.hinted)");
     const hinted = document.querySelectorAll(".tile.hinted");
@@ -516,7 +606,7 @@ function revealAndGameOver() {
     }   
     });
 
-    setTimeout(() => showOverlay("Game Over 😔", "Better luck next time!"), 600);
+    setTimeout(() => showOverlay("Game Over 😔"), 600);
 }
 
 function showOverlay(title, message) {
@@ -534,6 +624,7 @@ function resetGame() {
     shuffledWords = [];
     wrongGuesses = 0;
     nextHintSize = 5;
+    previousGuesses = [];
     document.getElementById("pyramid").innerHTML = "";
     [1,2,3,4].forEach(n => {
         const dot = document.getElementById(`dot${n}`);

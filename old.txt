@@ -1,0 +1,6 @@
+    categories: [
+        {label: "eläimiä", words: ["koira",  "kissa", "hiiri", "kilpikonna", "lisko"], color: "#2a9d8f" },
+        {label: "juomia", words: ["sooda",  "kahvi", "tee", "vesi"], color: "#f4a261" },
+        {label: "erilaisia aaltoja", words: ["slabi",  "a-frame", "barreli"], color: "#e63946" },
+        {label: "kasveja", words: ["cactus",  "palmu"], color: "#457b9d" },
+    ],

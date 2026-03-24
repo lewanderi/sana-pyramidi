@@ -1,3 +1,8 @@
+// database connection
+const supabaseUrl = "https://golunduallnunwyvnpyb.supabase.co"; 
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdvbHVuZHVhbGxudW53eXZucHliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDA1MzYsImV4cCI6MjA4OTg3NjUzNn0.AFiEhAmiflXXb1AFLjcXAMMzRu8wgtCvZMcpdgbfgl4"; 
+const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
 // puzzle
 const puzzle = {
     categories: [
@@ -21,39 +26,63 @@ let nextHintSize = 5;
 let previousGuesses = [];
 
 // check if custom URL
-function loadFromUrl() {
+async function loadFromUrl() {
     const params = new URLSearchParams(window.location.search);
-    const encoded = params.get("puzzle");
-    console.log("encoded:", encoded);
-    if (!encoded) return false;
+    const code = params.get("puzzle");
+    console.log("code:", code);
+    if (!code) return false;
 
-    try {
-        const puzzleData = JSON.parse(atob(encoded));
-        console.log("puzzleData:", puzzleData);
-        puzzle.categories = puzzleData.categories;
-        puzzle.lone_word = puzzleData.lone_word;
-        puzzle.lone_word_color = puzzleData.lone_word_color;
+        // check if it's an old base64 URL or a new share code
+    if (code.includes("-")) {
+        // new format — load from database
+        const { data, error } = await supabaseClient
+            .from("puzzles")
+            .select("*")
+            .eq("share_code", code)
+            .single();
+
+        if (error || !data) {
+            console.log("puzzle not found:", error);
+            return false;
+        }
+
+        const colors = ["#2a9d8f", "#f4a261", "#e63946", "#457b9d"];
+        puzzle.categories = data.categories.map((c, i) => ({
+            ...c,
+            color: colors[i]
+        }));
+        puzzle.lone_word = data.lone_word;
+        puzzle.lone_word_color = "#a8dadc";
         return true;
+
+    } else {
+        try {
+            const puzzleData = JSON.parse(atob(encoded));
+            console.log("puzzleData:", puzzleData);
+            puzzle.categories = puzzleData.categories;
+            puzzle.lone_word = puzzleData.lone_word;
+            puzzle.lone_word_color = puzzleData.lone_word_color;
+            return true;
     } catch (e) {
         console.log("error:", e);
         return false;  // invalid or corrupted URL
     }
+    }
 }
 
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
     hideBack();
-    const loadedFromUrl = loadFromUrl();
+    const loadedFromUrl = await loadFromUrl();
     console.log("loadedFromUrl:", loadedFromUrl); 
     if (loadedFromUrl) {
-        console.log("choice screen display:", document.getElementById("choice-screen").style.display);
-        console.log("rendering game from URL");  // ADD THIS
+        // reconstruct share URL from current URL
+        const code = new URLSearchParams(window.location.search).get("puzzle");
+        window.generatedShareUrl = `${window.location.origin}${window.location.pathname}?puzzle=${code}`;        
         document.getElementById("choice-screen").style.display = "none";
-        console.log("choice screen after:", document.getElementById("choice-screen").style.display);
         document.getElementById("game").style.display = "block";
-        console.log("game display:", document.getElementById("game").style.display); // ADD
+        document.getElementById("share-section").style.display = "flex";
         renderPyramid();
-        console.log("tiles in pyramid:", document.querySelectorAll(".tile").length);
 
         showBack(() => {
             document.getElementById("game").style.display = "none";
@@ -232,25 +261,8 @@ submitBtn.addEventListener("click", () => {
         selected.forEach(tile => {
             tile.remove();
         });
-
-        // create the merged block
-        const tileSpan = 12;
-        const rowWidth = match.words.length * tileSpan;
-        const rowStart = (COLS - rowWidth) / 2;
-
-        const mergedBlock = document.createElement("div");
-        mergedBlock.classList.add("locked", "merged-block");
-        mergedBlock.style.gridColumn = `${rowStart + 1} / ${rowStart + 1 + rowWidth}`;
-        mergedBlock.style.gridRow = match.words.length;
-        mergedBlock.style.background = match.color;
-
-        // label on top, words below
-        mergedBlock.innerHTML = `
-            <span class="merged-label">${match.label}</span>
-            <span class="merged-words">${match.words.join(", ")}</span>
-        `;
-
-        document.getElementById("pyramid").appendChild(mergedBlock);
+        
+        createMergedBlock(match.label, match.words, match.color, match.words.length);
 
         setTimeout(() => {
             repositionRemaining();
@@ -264,19 +276,9 @@ submitBtn.addEventListener("click", () => {
             setInstruction(`Nice one!👍🏻`, 2000);
             const tile = selected[0];
             tile.remove();
-            const tileSpan = 12;
-            const rowStart = (COLS - tileSpan) / 2;
 
-            const mergedBlock = document.createElement("div");
-            mergedBlock.classList.add("locked", "merged-block");
-            mergedBlock.style.gridColumn = `${rowStart + 1} / ${rowStart + 1 + tileSpan}`;
-            mergedBlock.style.gridRow = 1;
-            mergedBlock.style.background = puzzle.lone_word_color;
-            mergedBlock.innerHTML = `
-                <span class="merged-label">${puzzle.lone_word}</span>
-            `;
+            createMergedBlock(puzzle.lone_word, [puzzle.lone_word], puzzle.lone_word_color, 1);
 
-            document.getElementById("pyramid").appendChild(mergedBlock);
             repositionRemaining();
             checkWin();
         } else {
@@ -285,7 +287,7 @@ submitBtn.addEventListener("click", () => {
                 const matches = selectedWords.filter(w => category.words.includes(w)).length;
                 const extras = selectedWords.filter(w => !category.words.includes(w)).length;
                 console.log(category.label, "matches:", matches, "extras:", extras, "needed:", category.words.length - 1);
-                return matches === category.words.length - 1 && extras === 1;
+                return matches === category.words.length - 1 && extras === 1 && selectedWords.length === category.words.length;
             });
             console.log("oneAway:", oneAway);
 
@@ -325,7 +327,7 @@ submitBtn.addEventListener("click", () => {
 
 // custom words validation
 // STEP 1 — validate and generate link
-document.getElementById("generate-btn").addEventListener("click", () => {
+document.getElementById("generate-btn").addEventListener("click", async () => {
     const requiredSizes = [5, 4, 3, 2];
     const labelInputs = [...document.querySelectorAll(".category-label")];
     const loneWord = document.getElementById("lone-word-input").value.trim();
@@ -376,14 +378,16 @@ document.getElementById("generate-btn").addEventListener("click", () => {
     puzzle.lone_word = loneWord;
     puzzle.lone_word_color = "#a8dadc";
 
-    // generate link
-    const encoded = btoa(JSON.stringify({
-        categories: puzzle.categories,
-        lone_word: puzzle.lone_word,
-        lone_word_color: puzzle.lone_word_color
-    }));
-    const shareUrl = `${window.location.origin}${window.location.pathname}?puzzle=${encoded}`;
-    window.generatedShareUrl = shareUrl; 
+    // share code
+    const shareCode = await savePuzzle();
+    console.log("shareCode:", shareCode);
+    if (shareCode) {
+        console.log("inside shareCode block");
+        const shareUrl = `${window.location.origin}${window.location.pathname}?puzzle=${shareCode}`;
+        window.generatedShareUrl = shareUrl;
+        console.log("generatedShareUrl:", window.generatedShareUrl);
+        console.log("set to:", window.generatedShareUrl);
+    }
 
     document.getElementById("share-section").style.display = "flex";
 
@@ -401,13 +405,14 @@ document.getElementById("generate-btn").addEventListener("click", () => {
 });
     // copy button
     document.getElementById("copy-btn").addEventListener("click", () => {
-    navigator.clipboard.writeText(window.generatedShareUrl).then(() => {
-        document.getElementById("copy-btn").textContent = "Copied!✅";
-        setTimeout(() => {
-            document.getElementById("copy-btn").textContent = "Share Puzzle 🔗";
-        }, 3000);
+        console.log("generatedShareUrl:", window.generatedShareUrl);
+        navigator.clipboard.writeText(window.generatedShareUrl).then(() => {
+            document.getElementById("copy-btn").textContent = "Copied!✅";
+            setTimeout(() => {
+                document.getElementById("copy-btn").textContent = "Share Puzzle 🔗";
+            }, 3000);
+        });
     });
-});
 
 document.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
@@ -434,10 +439,7 @@ document.getElementById("overlay-view-btn").addEventListener("click", () => {
 // pyramid creation
 function renderPyramid() {
     shuffledWords = [];
-    console.log("renderPyramid called, puzzle:", puzzle);
     const pyramid = document.getElementById("pyramid");
-    console.log("pyramid:", pyramid);  // is this null?
-    console.log("game display:", document.getElementById("game").style.display); 
     let words = [
         ...puzzle.categories.flatMap(category => category.words),
         puzzle.lone_word
@@ -470,11 +472,13 @@ function renderPyramid() {
             }
         }
         newTile.addEventListener("click", () => {
+            const currentlySelected = document.querySelectorAll(".tile.selected").length;
+            if (!newTile.classList.contains("selected") && currentlySelected >= 5) return;
+
             newTile.classList.toggle("selected");
             updateSelectionColors();
         })
         pyramid.appendChild(newTile);
-        console.log("appending tile:", word);
     })
 }
 
@@ -512,12 +516,6 @@ function repositionRemaining() {
     const hintedCount = document.querySelectorAll(".tile.hinted").length;
     const expectedTiles = freeRows.reduce((sum, r) => sum + rowSizes[r], 0) - hintedCount;
 
-    console.log("--- repositionRemaining ---");
-    console.log("freeTiles:", freeTiles.length, freeTiles.map(t => t.textContent));
-    console.log("lockedRows:", [...lockedRows]);
-    console.log("freeRows:", freeRows);
-    console.log("expectedTiles:", expectedTiles);
-    console.log("match?", freeTiles.length === expectedTiles);
 
     if (freeTiles.length !== expectedTiles) {
         console.log("BAILED OUT — counts don't match");
@@ -571,48 +569,49 @@ function checkWin() {
 }
 
 function revealAndGameOver() {
-    document.querySelectorAll(".tile:not(.locked)").forEach(tile => {
-        const word = tile.textContent;
-        const category = puzzle.categories.find(c => c.words.includes(word));
+    // remove all unlocked tiles
+    document.querySelectorAll(".tile:not(.locked)").forEach(tile => tile.remove());
 
-    if (category) {
-        const tileSpan = 12;
-        const rowWidth = category.words.length * tileSpan;
-        const rowStart = (COLS - rowWidth) / 2;
-        const positionInCategory = category.words.indexOf(word);
-        const start = rowStart + (positionInCategory * tileSpan) + 1;
-
-        setTimeout(() => {
-            tile.style.gridColumn = `${start} / ${start + tileSpan}`;
-            tile.style.gridRow = category.words.length;
-            tile.style.background = category.color;
-        }, 10);
-
-        tile.classList.add("locked");
-        tile.style.pointerEvents = "none";
-    } else {
-        const tileSpan = 12;
-        const rowStart = (COLS - tileSpan) / 2;
-        const start = rowStart + 1;
-
-        setTimeout(() => {
-            tile.style.gridColumn = `${start} / ${start + tileSpan}`;
-            tile.style.gridRow = 1;
-            tile.style.background = puzzle.lone_word_color;
-        }, 10);
-
-        tile.classList.add("locked");
-        tile.style.pointerEvents = "none";
-    }   
+    // create merged blocks for each unsolved category
+    puzzle.categories.forEach(category => {
+        const alreadySolved = document.querySelector(`.merged-block[style*="grid-row: ${category.words.length}"]`);
+        if (!alreadySolved) {
+            createMergedBlock(category.label, category.words, category.color, category.words.length);
+        }
     });
 
-    setTimeout(() => showOverlay("Game Over 😔"), 600);
+    // create lone word block if not already solved
+    const loneAlreadySolved = document.querySelector(`.merged-block[style*="grid-row: 1"]`);
+    if (!loneAlreadySolved) {
+        createMergedBlock(puzzle.lone_word, [puzzle.lone_word], puzzle.lone_word_color, 1);
+    }
+
+    setTimeout(() => showOverlay("Game Over 😔", "Better luck next time champ!🫡"), 600);
 }
 
 function showOverlay(title, message) {
     document.getElementById("overlay-title").textContent = title;
     document.getElementById("overlay-message").textContent = message;
     document.getElementById("overlay").style.display = "flex";
+}
+
+// creating a merged block
+function createMergedBlock(label, words, color, gridRow) {
+    const tileSpan = 12;
+    const rowWidth = words.length * tileSpan;
+    const rowStart = (COLS - rowWidth) / 2;
+
+    const mergedBlock = document.createElement("div");
+    mergedBlock.classList.add("locked", "merged-block");
+    mergedBlock.style.gridColumn = `${rowStart + 1} / ${rowStart + 1 + rowWidth}`;
+    mergedBlock.style.gridRow = gridRow;
+    mergedBlock.style.background = color;
+    mergedBlock.innerHTML = words.length > 1
+        ? `<span class="merged-label">${label}</span><span class="merged-words">${words.join(", ")}</span>`
+        : `<span class="merged-label">${label}</span>`;
+
+    document.getElementById("pyramid").appendChild(mergedBlock);
+    return mergedBlock;
 }
 
 function resetGame() {
@@ -633,4 +632,34 @@ function resetGame() {
     document.getElementById("hint-btn").disabled = false;
     document.getElementById("hint-btn").style.opacity = "1";
     document.getElementById("share-section").style.display = "none";
+}
+
+// generate share code
+function generateShareCode() {
+    const now = new Date();
+    const date = now.toISOString().slice(0, 10).replace(/-/g, "");  // "20240315"
+    const time = now.getTime().toString(36);  // base36 of milliseconds, e.g. "lxk2f3"
+    return `${date}-${time}`;  // "20240315-lxk2f3"
+}
+
+// save puzzle function
+async function savePuzzle() {
+    const shareCode = generateShareCode();
+    
+    const { data, error } = await supabaseClient
+        .from("puzzles")
+        .insert({
+            share_code: shareCode,
+            categories: puzzle.categories.map(c => ({ label: c.label, words: c.words })),
+            lone_word: puzzle.lone_word
+        })
+        .select();  // returns the saved record
+    
+    if (error) {
+        console.error("Error saving puzzle:", error);
+        return null;
+    }
+    
+    console.log("Saved puzzle:", data);
+    return shareCode;
 }

@@ -3,89 +3,92 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Word Summit</title>
+    <title>Sanavuori</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏔️</text></svg>">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   </head>
   <body>
     <header id="main-header">
-        <button id="back-btn" style="visibility:hidden;">← Back</button>
-        <h1>Word Summit</h1>
+        <h1>Sanavuori</h1>
     </header>
 
     <div id="choice-screen">
-      <p>Choose game mode</p>
+      <p>Valitse pelimuoto</p>
       <div class="choice-buttons">
-          <button id="example-btn">Daily Puzzle</button>
-          <button id="custom-btn">Create Your Own</button>
+          <button id="example-btn">Päivän haaste</button>
+          <button id="custom-btn">Luo oma</button>
       </div>
     </div>
 
    <div id="setup-screen" style="display:none;">
-    <h2>Create Your Puzzle</h2>
-    <p class="setup-subtitle">Fill in each category label and related words</p>
+    <h2>Luo oma</h2>
+    <p class="setup-subtitle">Lisää kategoria ja sanat</p>
 
     <div class="setup-categories">
         <div class="setup-category">
             <div class="chip-row" data-size="5">
-                <input type="text" class="category-label" placeholder="e.g. Things that fly">
-                <input type="text" class="chip-input" placeholder="eagle">
-                <input type="text" class="chip-input" placeholder="kite">
-                <input type="text" class="chip-input" placeholder="balloon">
+                <input type="text" class="category-label" placeholder="Lentäviä asioita">
+                <input type="text" class="chip-input" placeholder="kotka">
+                <input type="text" class="chip-input" placeholder="leija">
+                <input type="text" class="chip-input" placeholder="lentokone">
                 <input type="text" class="chip-input" placeholder="frisbee">
-                <input type="text" class="chip-input" placeholder="butterfly">
+                <input type="text" class="chip-input" placeholder="perhonen">
             </div>
         </div>
         <div class="setup-category">
-            <input type="text" class="category-label" placeholder="Category name...">
+            <input type="text" class="category-label" placeholder="Kategoria...">
             <div class="chip-row" data-size="4">
-                <input type="text" class="chip-input" placeholder="word">
-                <input type="text" class="chip-input" placeholder="word">
-                <input type="text" class="chip-input" placeholder="word">
-                <input type="text" class="chip-input" placeholder="word">
+                <input type="text" class="chip-input" placeholder="sana">
+                <input type="text" class="chip-input" placeholder="sana">
+                <input type="text" class="chip-input" placeholder="sana">
+                <input type="text" class="chip-input" placeholder="sana">
             </div>
         </div>
         <div class="setup-category">
-            <input type="text" class="category-label" placeholder="Category name...">
+            <input type="text" class="category-label" placeholder="Kategoria...">
             <div class="chip-row" data-size="3">
-                <input type="text" class="chip-input" placeholder="word">
-                <input type="text" class="chip-input" placeholder="word">
-                <input type="text" class="chip-input" placeholder="word">
+                <input type="text" class="chip-input" placeholder="sana">
+                <input type="text" class="chip-input" placeholder="sana">
+                <input type="text" class="chip-input" placeholder="sana">
             </div>
         </div>
         <div class="setup-category">
-            <input type="text" class="category-label" placeholder="Category name...">
+            <input type="text" class="category-label" placeholder="Kategoria...">
             <div class="chip-row" data-size="2">
-                <input type="text" class="chip-input" placeholder="word">
-                <input type="text" class="chip-input" placeholder="word">
+                <input type="text" class="chip-input" placeholder="sana">
+                <input type="text" class="chip-input" placeholder="sana">
             </div>
         </div>
 
     <div class="setup-lone">
-        <p class="lone-label">The odd one out</p>
-        <input type="text" id="lone-word-input" placeholder="lone word">
+        <p class="lone-label">Yksinäinen</p>
+        <input type="text" id="lone-word-input" placeholder="yksittäinen sana">
     </div>
 
     <p id="validation-msg" style="color:red; display:none;"></p>
-    <button id="generate-btn">Generate Puzzle</button>
+    <button id="generate-btn">Luo vuori</button>
 </div>
 </div>
 
+    <div id="loading" style="display:none;">
+        <div class="spinner"></div>
+        <p id="loading-text"></p>
+    </div>
     <div id="game" style="display:none;">
-        <h2 id="instruction">Select words that belong together</h2>
+        <h2 id="instruction">Valitse yhteenkuuluvat sanat</h2>
         <div id="share-section" style="display:none;">
-            <button id="copy-btn">Share Puzzle 🔗</button>
+            <button id="copy-btn">Jaa 🔗</button>
         </div>
         <div id="pyramid">
         </div>
       <div id="overlay" style="display:none;">
         <h2 id="overlay-title"></h2>
         <p id="overlay-message"></p>
-        <button id="overlay-btn">Play Again</button>
-        <button id="overlay-home-btn">Home</button>
-        <button id="overlay-create-btn">Create Your Own</button>
-        <button id="overlay-view-btn">View Solution</button>
+        <button id="overlay-btn">Pelaa uudestaan</button>
+        <button id="overlay-home-btn">Koti</button>
+        <button id="overlay-create-btn">Luo oma</button>
+        <button id="overlay-view-btn">Näytä ratkaisu</button>
       </div>
       <div id="mistakes">
         <div id="dots">
@@ -96,11 +99,12 @@
         </div>
       </div>
       <div class="buttons">
-          <button id="check-btn">Check</button>
-          <button id="clear-btn">Clear</button>
-          <button id="hint-btn">Hint</button>
+          <button id="check-btn">Tarkista</button>
+          <button id="clear-btn">Tyhjennä</button>
+          <button id="hint-btn">Vihje</button>
       </div>
     </div>
+    <button id="back-btn" style="visibility:hidden;">⬅️Takaisin</button>
     <script src="script.js"></script>
   </body>
 </html>

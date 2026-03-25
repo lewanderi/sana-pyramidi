@@ -6,15 +6,14 @@ const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 // puzzle
 const puzzle = {
     categories: [
-        {label: "suu", words: ["nuolee",  "pussaa", "kuolaa", "viheltää", "röyhtäisee"], color: "#2a9d8f" },
-        {label: "silmät", words: ["kostuu",  "itkee", "siristää", "näkee"], color: "#f4a261" },
-        {label: "nenä", words: ["haistaa",  "nyrpistää", "tuhahtaa"], color: "#e63946" },
-        {label: "korvat", words: ["kuulee",  "punastuu"], color: "#457b9d" },
+        {label: "Kahveja☕️", words: [ "Americano", "Espresso", "Latte", "Suodatin", "Capuccino"], color: "#2a9d8f" },
+        {label: "Teetä🍵", words: ["Vihreä",  "valkoinen", "musta", "rooibos"], color: "#f4a261" },
+        {label: "Negroni🥃", words: ["campari",  "gin", "vermouth"], color: "#e63946" },
+        {label: "Rommikola🍹", words: ["rommi",  "coca-cola"], color: "#457b9d" },
     ],
-    lone_word: "aistii",
+    lone_word: "vodka",
     lone_word_color: "#a8dadc"
 }
-
 const defaultPuzzle = JSON.parse(JSON.stringify(puzzle));
 
 // global variables
@@ -35,11 +34,19 @@ async function loadFromUrl() {
         // check if it's an old base64 URL or a new share code
     if (code.includes("-")) {
         // new format — load from database
-        const { data, error } = await supabaseClient
-            .from("puzzles")
-            .select("*")
-            .eq("share_code", code)
-            .single();
+
+        // loading state
+        document.getElementById("choice-screen").style.display = "none";
+        document.getElementById("loading").style.display = "flex";
+        startLoadingMessages();
+
+        const [{ data, error }] = await Promise.all([
+            supabaseClient.from("puzzles").select("*").eq("share_code", code).single(),
+            new Promise(resolve => setTimeout(resolve, 2000))
+        ]);
+
+        document.getElementById("loading").style.display = "none";
+        stopLoadingMessages();
 
         if (error || !data) {
             console.log("puzzle not found:", error);
@@ -230,7 +237,7 @@ submitBtn.addEventListener("click", () => {
         submitBtn.classList.remove("shake");
         }, { once: true });
 
-        setInstruction("Select at least one word");
+        setInstruction("Valitse vähintään yksi sana");
 
         return;
     } 
@@ -238,7 +245,7 @@ submitBtn.addEventListener("click", () => {
     const guessKey = [...selectedWords].sort().join(",");
 
     if (previousGuesses.includes(guessKey)) {
-        setInstruction("You already tried this! 🤔");
+        setInstruction("Kokeilit tätä jo! 🤔");
         selected.forEach(tile => {
                 tile.classList.add("shake");
                 tile.addEventListener("animationend", () => {
@@ -256,7 +263,7 @@ submitBtn.addEventListener("click", () => {
     );
 
     if (match) {
-        setInstruction(`Nice one!👍🏻`, 2000);
+        setInstruction(`Hyvä!👍🏻`, 2000);
 
         selected.forEach(tile => {
             tile.remove();
@@ -273,7 +280,7 @@ submitBtn.addEventListener("click", () => {
         const isLoneWord = selectedWords.length === 1 && selectedWords[0] === puzzle.lone_word;
 
         if (isLoneWord) {
-            setInstruction(`Nice one!👍🏻`, 2000);
+            setInstruction(`Hyvä!👍🏻`, 2000);
             const tile = selected[0];
             tile.remove();
 
@@ -300,11 +307,11 @@ submitBtn.addEventListener("click", () => {
             });
 
             if (onTrack) {
-                setInstruction(`Need ${onTrack.words.length - selectedWords.length} more!`);
+                setInstruction(`Tarvitset ${onTrack.words.length - selectedWords.length} lisää!`);
             } else if (oneAway) {
-                setInstruction("One away...");
+                setInstruction("Yhden päässä...");
             } else {
-                setInstruction("Nope🙂‍↔️");
+                setInstruction("Ei🙁");
             }
 
             selected.forEach(tile => {
@@ -346,24 +353,24 @@ document.getElementById("generate-btn").addEventListener("click", async () => {
 
     const emptyLabel = categories.find(c => c.label === "");
     if (emptyLabel) {
-        validationMsg.textContent = "All category labels must be filled in";
+        validationMsg.textContent = "Täytä kaikki kategoriat";
         validationMsg.style.display = "block";
         return;
     }
     const wrongCount = categories.find(c => c.words.length !== c.size);
     if (wrongCount) {
-        validationMsg.textContent = `"${wrongCount.label}" needs exactly ${wrongCount.size} words`;
+        validationMsg.textContent = `"${wrongCount.label}" tarvitsee tasan ${wrongCount.size} sanaa`;
         validationMsg.style.display = "block";
         return;
     }
     if (!loneWord) {
-        validationMsg.textContent = "Please enter a lone word";
+        validationMsg.textContent = "Lisää yksittäinen sana";
         validationMsg.style.display = "block";
         return;
     }
     const allWords = [...categories.flatMap(c => c.words), loneWord];
     if (new Set(allWords).size !== allWords.length) {
-        validationMsg.textContent = "All words must be unique";
+        validationMsg.textContent = "Kaikkien sanojen täytyy olla eri";
         validationMsg.style.display = "block";
         return;
     }
@@ -407,9 +414,9 @@ document.getElementById("generate-btn").addEventListener("click", async () => {
     document.getElementById("copy-btn").addEventListener("click", () => {
         console.log("generatedShareUrl:", window.generatedShareUrl);
         navigator.clipboard.writeText(window.generatedShareUrl).then(() => {
-            document.getElementById("copy-btn").textContent = "Copied!✅";
+            document.getElementById("copy-btn").textContent = "Kopioitu!✅";
             setTimeout(() => {
-                document.getElementById("copy-btn").textContent = "Share Puzzle 🔗";
+                document.getElementById("copy-btn").textContent = "Jaa 🔗";
             }, 3000);
         });
     });
@@ -555,7 +562,7 @@ function setInstruction(text, duration = 2000) {
     el.textContent = text;
     clearTimeout(window.instructionTimeout);
     window.instructionTimeout = setTimeout(() => {
-        el.textContent = "Select words that belong together";
+        el.textContent = "Valitse yhteenkuuluvat sanat";
     }, duration);
 }
 
@@ -563,7 +570,7 @@ function checkWin() {
     const remaining = document.querySelectorAll(".tile:not(.locked):not(.hinted)");
     const hinted = document.querySelectorAll(".tile.hinted");
     if (remaining.length === 0 && hinted.length === 0) {
-        setTimeout(() => showOverlay("You solved it! 🎉"), 500);
+        setTimeout(() => showOverlay("Ratkaistu! 🎉", "Oletko sinä se sanavelho?🧙🏼‍♂️"), 500);
         // here create your own button?
     }
 }
@@ -586,7 +593,7 @@ function revealAndGameOver() {
         createMergedBlock(puzzle.lone_word, [puzzle.lone_word], puzzle.lone_word_color, 1);
     }
 
-    setTimeout(() => showOverlay("Game Over 😔", "Better luck next time champ!🫡"), 600);
+    setTimeout(() => showOverlay("Peli ohi😔", "Seuraavalla kerralla onnistuu!🫡"), 600);
 }
 
 function showOverlay(title, message) {
@@ -662,4 +669,60 @@ async function savePuzzle() {
     
     console.log("Saved puzzle:", data);
     return shareCode;
+}
+
+// loading msg texts
+const loadingMessages = [
+    "Valmistellaan peliä...",
+    "Ladataan kategorioita...",
+    "Sekoitetaan sanoja...",
+    "Kohta valmista...",
+    "Valitsemassa värejä...",
+    "Keksimässä hyviä vihjeita...",
+    "❤️❤️❤️❤️",
+    "KyLlä mUn MiEleStÄ jOo..",
+    "Aika siisti peli eiks je?",
+    "Teroitetaan kyniä...",
+    "Plärätään sanakirjaa...",
+    "Piilotetaan helpot...",
+    "Tehdään vaikeammaksi...",
+    "Konsultoidaan sanavelhoa...",
+    "Varastetaan sanoja kirjastosta...",
+    "Aakkosjärjestys, eiku ei...",
+    "Säädetään vaikeustasoa...",
+    "Melkein valmista, ehkä...",
+    "Kysymässä äidiltä apua...",
+    "Mom is typing..."
+];
+
+let messageInterval;
+let lastIndex = -1;
+
+function startLoadingMessages() {
+    const el = document.getElementById("loading-text");
+    const randomIndex = Math.floor(Math.random() * loadingMessages.length);
+    lastIndex = randomIndex;
+    el.textContent = loadingMessages[randomIndex];
+    el.style.opacity = "1";
+
+    messageInterval = setInterval(() => {
+        // fade out
+        el.style.opacity = "0";
+
+        // wait for fade out, then change text and fade in
+        setTimeout(() => {
+            let randomIndex;
+            do {
+                randomIndex = Math.floor(Math.random() * loadingMessages.length);
+            } while (randomIndex === lastIndex);
+            lastIndex = randomIndex;
+            el.textContent = loadingMessages[randomIndex];
+            el.style.opacity = "1";
+        }, 400);  // pause between fade out and fade in
+
+    }, 1000);  // change every 2 seconds
+}
+
+function stopLoadingMessages() {
+    clearInterval(messageInterval);
 }

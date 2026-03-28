@@ -18,6 +18,8 @@
       <div class="choice-buttons">
           <button id="example-btn">Päivän haaste</button>
           <button id="custom-btn">Luo oma</button>
+          <hr class="choice-divider">
+          <button id="library-btn" onclick="window.location.href='library.html'">Kirjasto📚</button>
       </div>
     </div>
 
@@ -63,10 +65,18 @@
 
     <div class="setup-lone">
         <p class="lone-label">Yksinäinen</p>
-        <input type="text" id="lone-word-input" placeholder="yksittäinen sana">
+        <input type="text" id="lone-word-input" placeholder="sana">
     </div>
 
     <p id="validation-msg" style="color:red; display:none;"></p>
+    <div class="setup-publish">
+        <input type="text" id="puzzle-name-input" placeholder="Vuoren nimi (valinnainen)">
+        <label class="toggle-label">
+            <input type="checkbox" id="is-public-toggle">
+            <span>Julkinen</span>
+        </label>
+    </div>
+
     <button id="generate-btn">Luo vuori</button>
 </div>
 </div>
@@ -77,9 +87,6 @@
     </div>
     <div id="game" style="display:none;">
         <h2 id="instruction">Valitse yhteenkuuluvat sanat</h2>
-        <div id="share-section" style="display:none;">
-            <button id="copy-btn">Jaa 🔗</button>
-        </div>
         <div id="pyramid">
         </div>
       <div id="overlay" style="display:none;">
@@ -105,6 +112,9 @@
       </div>
     </div>
     <button id="back-btn" style="visibility:hidden;">⬅️Takaisin</button>
+    <div id="share-section" style="display:none;">
+        <button id="copy-btn">Jaa 🔗</button>
+    </div>
     <script src="script.js"></script>
   </body>
 </html>

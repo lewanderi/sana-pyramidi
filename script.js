@@ -42,7 +42,7 @@ async function loadFromUrl() {
 
         const [{ data, error }] = await Promise.all([
             supabaseClient.from("puzzles").select("*").eq("share_code", code).single(),
-            new Promise(resolve => setTimeout(resolve, 2000))
+            new Promise(resolve => setTimeout(resolve, 1000))
         ]);
 
         document.getElementById("loading").style.display = "none";
@@ -80,6 +80,11 @@ async function loadFromUrl() {
 
 document.addEventListener("DOMContentLoaded", async () => {
     hideBack();
+
+    window.addEventListener("pageshow", () => {
+        hideBack();
+    });
+
     const loadedFromUrl = await loadFromUrl();
     console.log("loadedFromUrl:", loadedFromUrl); 
     if (loadedFromUrl) {
@@ -98,6 +103,20 @@ document.addEventListener("DOMContentLoaded", async () => {
             hideBack();
         });
     }
+
+    // from library
+    const fromLibrary = new URLSearchParams(window.location.search).get("from") === "library";
+    
+    showBack(() => {
+        if (fromLibrary) {
+            window.location.href = "library.html";
+        } else {
+            document.getElementById("game").style.display = "none";
+            document.getElementById("choice-screen").style.display = "flex";
+            resetGame();
+            hideBack();
+        }
+    });
 
 
 // event listeners
@@ -193,10 +212,33 @@ document.getElementById("hint-btn").addEventListener("click", () => {
     }
 });
 
-// start choice
-document.getElementById("example-btn").addEventListener("click", () => {
+// start choice DAILY PÄIVÄN VUORI
+document.getElementById("example-btn").addEventListener("click", async () => {
+    // get daily also from home screen
+    const today = new Date().toISOString().slice(0, 10);
+
+    const { data: daily } = await supabaseClient
+        .from("puzzles")
+        .select("*")
+        .eq("is_daily", true)
+        .lte("daily_date", today)
+        .order("daily_date", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+    if (daily) {
+        const colors = ["#2a9d8f", "#f4a261", "#e63946", "#457b9d"];
+        puzzle.categories = daily.categories.map((c, i) => ({ ...c, color: colors[i] }));
+        puzzle.lone_word = daily.lone_word;
+        puzzle.lone_word_color = "#a8dadc";
+
+        window.generatedShareUrl = `${window.location.origin}/index.html?puzzle=${daily.share_code}`;
+        document.getElementById("share-section").style.display = "flex";
+    }
+
     document.getElementById("choice-screen").style.display = "none";
     document.getElementById("game").style.display = "block";
+    
     showBack(() => {  
         document.getElementById("game").style.display = "none";
         document.getElementById("choice-screen").style.display = "flex";
@@ -652,13 +694,22 @@ function generateShareCode() {
 // save puzzle function
 async function savePuzzle() {
     const shareCode = generateShareCode();
+    const nameInput = document.getElementById("puzzle-name-input").value.trim();
+    const isPublic = document.getElementById("is-public-toggle").checked;
+
+    const defaultName = puzzle.categories.map(c => c.label).join(" • ");
+    const name = nameInput || defaultName;
     
     const { data, error } = await supabaseClient
         .from("puzzles")
         .insert({
             share_code: shareCode,
             categories: puzzle.categories.map(c => ({ label: c.label, words: c.words })),
-            lone_word: puzzle.lone_word
+            lone_word: puzzle.lone_word,
+            name: name,
+            is_public: isPublic,
+            is_daily: false,
+            daily_date: null
         })
         .select();  // returns the saved record
     

@@ -6,30 +6,36 @@ body {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+    align-items: center;
 }
 
 header {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.25rem;
-}
-
-#main-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1rem 1.5rem;
-}
-
-#main-header h1 {
-    flex: 1;
+    padding: 1rem 0;
     text-align: center;
+    max-width: 720px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+header h1 {
     margin: 0;
+    font-size: clamp(2rem, 8vw, 3rem);
+    font-weight: 700;
 }
 
 header h2 {
+    margin: 0;
     color: rgba(255,255,255,0.7);
+}
+
+/* puzzle name */
+#puzzle-name {
+    font-size: clamp(0.75rem, 2vw, 1rem);
+    color: rgba(255,255,255, 0.4);
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 1rem;
 }
 
 #instruction {
@@ -355,6 +361,7 @@ header h2 {
     transition: all 0.4s ease;
 
     min-width: 0;
+    overflow: hidden;
 
     text-transform: uppercase;
     text-align: center;
@@ -364,11 +371,11 @@ header h2 {
 }
 
 /* color for selection */
-.tile.selected-1 { background: #a8dadc; }
-.tile.selected-2 { background: #457b9d; }
-.tile.selected-3 { background: #e63946; }
-.tile.selected-4 { background: #f4a261; }
-.tile.selected-5 { background: #2a9d8f; }
+.tile.selected-1 { background: #a8dadc; color: black; }
+.tile.selected-2 { background: #457b9d; color: black; }
+.tile.selected-3 { background: #e63946; color: black; }
+.tile.selected-4 { background: #f4a261; color: black; }
+.tile.selected-5 { background: #2a9d8f; color: black; }
 
 /* pyramid tiles */
 #pyramid {
@@ -513,6 +520,7 @@ button {
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(8px);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -633,11 +641,11 @@ button {
 }
 
 /* library sections */
+
 #daily-section,
 #community-section {
-    max-width: 600px;
-    margin: 2rem auto;
-    padding: 0 2rem;
+    width: 90%; 
+    max-width: 400px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -655,7 +663,6 @@ button {
 }
 
 .puzzle-card {
-    width: 400px;
     padding: 1rem 1.25rem;
     cursor: pointer;
     margin-bottom: 0.75rem;

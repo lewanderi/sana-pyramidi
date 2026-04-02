@@ -6,13 +6,14 @@ const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 // puzzle
 const puzzle = {
     categories: [
-        {label: "Kahveja☕️", words: [ "Americano", "Espresso", "Latte", "Suodatin", "Capuccino"], color: "#2a9d8f" },
-        {label: "Teetä🍵", words: ["Vihreä",  "valkoinen", "musta", "rooibos"], color: "#f4a261" },
-        {label: "Negroni🥃", words: ["campari",  "gin", "vermouth"], color: "#e63946" },
+        {label: "Kahveja☕️", words: [ "Americano", "Espresso", "Latte", "Suodatin", "Capuccino"], color: "#2a9d8f", hintColor: "#7fd4c1" },
+        {label: "Teetä🍵", words: ["Vihreä",  "valkoinen", "musta", "rooibos"], color: "#f4a261", hintColor: "#f9c895" },
+        {label: "Negroni🥃", words: ["campari",  "gin", "vermouth"], color: "#e63946", hintColor: "#f28b95" },
         {label: "Rommikola🍹", words: ["rommi",  "coca-cola"], color: "#457b9d" },
     ],
     lone_word: "vodka",
-    lone_word_color: "#a8dadc"
+    lone_word_color: "#a8dadc",
+    name: ""
 }
 const defaultPuzzle = JSON.parse(JSON.stringify(puzzle));
 
@@ -53,13 +54,16 @@ async function loadFromUrl() {
             return false;
         }
 
+        const hintColors = ["#7fd4c1", "#f9c895", "#f28b95"];
         const colors = ["#2a9d8f", "#f4a261", "#e63946", "#457b9d"];
         puzzle.categories = data.categories.map((c, i) => ({
             ...c,
-            color: colors[i]
+            color: colors[i],
+            hintColor: hintColors[i]
         }));
         puzzle.lone_word = data.lone_word;
         puzzle.lone_word_color = "#a8dadc";
+        puzzle.name = data.name || "";
         return true;
 
     } else {
@@ -148,6 +152,10 @@ document.getElementById("clear-btn").addEventListener("click", () => {
     document.querySelectorAll(".tile.selected").forEach(tile => {
         tile.classList.remove("selected");
         [1,2,3,4,5].forEach(n => tile.classList.remove(`selected-${n}`));
+
+        if (tile.classList.contains("hinted")) {
+        tile.style.background = tile.dataset.hintColor;
+        }
     });
 });
 
@@ -193,17 +201,20 @@ document.getElementById("hint-btn").addEventListener("click", () => {
 
     // move hint tile to slot 1
     hintTile.classList.add("hinted");
+    hintTile.classList.remove("selected");
+    [1,2,3,4,5].forEach(n => hintTile.classList.remove(`selected-${n}`));
     hintTile.style.gridColumn = slot1Column;
     hintTile.style.gridRow = slot1Row;
-    hintTile.dataset.hintColor = category.color;
-    hintTile.style.background = category.color; 
-        
+    hintTile.dataset.hintColor = category.hintColor;
+    hintTile.style.background = category.hintColor;
 
     // move the displaced tile into the hint tile's old position
     if (tileInSlot1 && tileInSlot1 !== hintTile) {
         tileInSlot1.style.gridColumn = hintTileOldColumn;
         tileInSlot1.style.gridRow = hintTileOldRow;
     }
+
+    updateSelectionColors();
 
     nextHintSize--;
     if (nextHintSize < 3) {
@@ -228,9 +239,11 @@ document.getElementById("example-btn").addEventListener("click", async () => {
 
     if (daily) {
         const colors = ["#2a9d8f", "#f4a261", "#e63946", "#457b9d"];
-        puzzle.categories = daily.categories.map((c, i) => ({ ...c, color: colors[i] }));
+        const hintColors = ["#7fd4c1", "#f9c895", "#f28b95"];
+        puzzle.categories = daily.categories.map((c, i) => ({ ...c, color: colors[i], hintColor: hintColors[i] }));
         puzzle.lone_word = daily.lone_word;
         puzzle.lone_word_color = "#a8dadc";
+        puzzle.name = daily.name || "";
 
         window.generatedShareUrl = `${window.location.origin}/index.html?puzzle=${daily.share_code}`;
         document.getElementById("share-section").style.display = "flex";
@@ -377,6 +390,9 @@ submitBtn.addEventListener("click", () => {
 // custom words validation
 // STEP 1 — validate and generate link
 document.getElementById("generate-btn").addEventListener("click", async () => {
+
+    const nameInput = document.getElementById("puzzle-name-input").value.trim();
+
     const requiredSizes = [5, 4, 3, 2];
     const labelInputs = [...document.querySelectorAll(".category-label")];
     const loneWord = document.getElementById("lone-word-input").value.trim();
@@ -419,17 +435,26 @@ document.getElementById("generate-btn").addEventListener("click", async () => {
 
     // build puzzle object
     const colors = ["#2a9d8f", "#f4a261", "#e63946", "#457b9d"];
+    const hintColors = ["#7fd4c1", "#f9c895", "#f28b95"];
     puzzle.categories = categories.map((c, i) => ({
         label: c.label,
         words: c.words,
-        color: colors[i]
+        color: colors[i],
+        hintColor: hintColors[i] 
     }));
     puzzle.lone_word = loneWord;
     puzzle.lone_word_color = "#a8dadc";
 
-    // share code
+    puzzle.name = nameInput || "Untitled Puzzle";
+    
+
+    // share code + name
     const shareCode = await savePuzzle();
+    if (!nameInput) {
+    puzzle.name = `Sanavuori ${shareCode}`;
+}
     console.log("shareCode:", shareCode);
+
     if (shareCode) {
         console.log("inside shareCode block");
         const shareUrl = `${window.location.origin}${window.location.pathname}?puzzle=${shareCode}`;
@@ -487,6 +512,9 @@ document.getElementById("overlay-view-btn").addEventListener("click", () => {
 
 // pyramid creation
 function renderPyramid() {
+    // puzzle name
+    document.getElementById("puzzle-name").textContent = puzzle.name;
+
     shuffledWords = [];
     const pyramid = document.getElementById("pyramid");
     let words = [
@@ -635,7 +663,7 @@ function revealAndGameOver() {
         createMergedBlock(puzzle.lone_word, [puzzle.lone_word], puzzle.lone_word_color, 1);
     }
 
-    setTimeout(() => showOverlay("Peli ohi😔", "Seuraavalla kerralla onnistuu!🫡"), 600);
+    showOverlay("Peli ohi😔", "Seuraavalla kerralla onnistuu!🫡");
 }
 
 function showOverlay(title, message) {
@@ -669,6 +697,8 @@ function resetGame() {
     puzzle.lone_word = defaultPuzzle.lone_word;
     puzzle.lone_word_color = defaultPuzzle.lone_word_color;
 
+    document.getElementById("puzzle-name").textContent = "";
+
     shuffledWords = [];
     wrongGuesses = 0;
     nextHintSize = 5;
@@ -697,8 +727,7 @@ async function savePuzzle() {
     const nameInput = document.getElementById("puzzle-name-input").value.trim();
     const isPublic = document.getElementById("is-public-toggle").checked;
 
-    const defaultName = puzzle.categories.map(c => c.label).join(" • ");
-    const name = nameInput || defaultName;
+    const name = nameInput || `Sanavuori ${shareCode}`;
     
     const { data, error } = await supabaseClient
         .from("puzzles")
@@ -771,7 +800,7 @@ function startLoadingMessages() {
             el.style.opacity = "1";
         }, 400);  // pause between fade out and fade in
 
-    }, 1000);  // change every 2 seconds
+    }, 2000);  // change every X seconds
 }
 
 function stopLoadingMessages() {

@@ -1,10 +1,10 @@
 features to add:
 -kieli
--if hint selected then take hint doesn't take the hint?
--smoother animation
--database
--performance slowed down when async?
+-smoother animation - branch positioning
 
+-hint color darker
+
+-git branch pixel based positioning
 
 -test link
 http://127.0.0.1:5500/index.html?puzzle=test-123
